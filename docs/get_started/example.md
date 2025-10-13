@@ -8,7 +8,7 @@ parent: Get started
 
 ## Example deploy
 
-![Example network](/assets/example_network.png)
+![Example network](/wg-Qrotator/assets/example_network.png)
 
 An **example on how to setup the key rotator of Node A** in the network above to support the links with Node B and Node C is provided here. Each node has only one network interface managed by WireGuard, `wg0`, and each node is publicly identified by its IP within the VPN, its WireGuard public key, and its Secure Application Entity (SAE) ID within the QKD network. Since, ML-KEM PQ-KE is going to be enabled, each node has also a ML-KEM public key.
 
