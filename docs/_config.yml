@@ -12,8 +12,8 @@ aux_links:
   "wg-Qrotator on GitHub":
     - "//github.com/Quantum-Communication-Group/wg-Qrotator"
 
-#logo: "/assets/imagem.png"                 # to add
-#favicon_ico: "/assets/images/favicon.ico"  # to add
+logo: "/assets/logo_with_white_text.png"
+favicon_ico: "/assets/favicon.ico"
 
 last_edit_timestamp: true
 gh_edit_link: true

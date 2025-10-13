@@ -1,4 +1,6 @@
-# wg-Qrotator
+<p align="center">
+<img width="208" height="70" alt="logo_with_white_text" src="docs/assets/logo_with_white_text.png" />
+</p>
 
 `wg-Qrotator` is the quantum-enabled hybrid key rotator for [WireGuard](https://www.wireguard.com/) IP tunnels. 
 
