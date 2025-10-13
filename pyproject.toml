@@ -37,7 +37,7 @@ keywords = [
 ]
 
 [project.urls]
-Documentation = "https://wg-Qrotator.github.io"
+Documentation = "https://quantum-communication-group.github.io/wg-Qrotator"
 Repository = "https://github.com/Quantum-Communication-Group/wg-Qrotator"
 "Bug Tracker" = "https://github.com/Quantum-Communication-Group/wg-Qrotator/issues"
 
