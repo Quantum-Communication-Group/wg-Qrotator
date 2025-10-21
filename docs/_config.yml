@@ -8,6 +8,9 @@ mermaid:
 
 url: https://wg-Qrotator.github.io
 
+plugins:
+  - jekyll-sitemap
+
 aux_links:
   "wg-Qrotator on GitHub":
     - "//github.com/Quantum-Communication-Group/wg-Qrotator"
@@ -19,7 +22,7 @@ last_edit_timestamp: true
 gh_edit_link: true
 gh_edit_link_text: "Edit this page on GitHub."
 gh_edit_repository: "https://github.com/Quantum-Communication-Group/wg-Qrotator"
-gh_edit_branch: "main/docs" 
+gh_edit_branch: "main/docs"
 gh_edit_view_mode: "tree"
 
 callouts:
@@ -37,4 +40,4 @@ nav_external_links:
   - title: IT Av Quantum Communication Group
     url: https://www.it.pt/Groups/Index/72
     hide_icon: false
-    opens_in_new_tab: true 
+    opens_in_new_tab: true
