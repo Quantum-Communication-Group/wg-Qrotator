@@ -6,7 +6,7 @@ color_scheme: dark
 mermaid:
   version: "11.12.0"
 
-url: https://wg-Qrotator.github.io
+url: https://quantum-communication-group.github.io
 
 plugins:
   - jekyll-sitemap
