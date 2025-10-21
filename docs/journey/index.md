@@ -97,7 +97,7 @@ Since PQ-KEs are considered optional, this step is also optional.
 
 ### Key verification
 
-The final key that was generated is the result of the XOR of the QKD and post-quantum keys. To ensure its integrity, the `client` hashes the key using SHA-256 with a combination of the SAE IDs as the salt. The `client` sends the digest to the `server` that verifies it by performing the same hashing procedure. If the verification passes successfully, it answers with an acknowledgement.
+The final key that was generated is the result of the XOR of the QKD and post-quantum keys. To ensure its integrity, the `client` hashes the key using SHA-512 with a combination of the SAE IDs as the salt. The `client` sends the digest to the `server` that verifies it by performing the same hashing procedure. If the verification passes successfully, it answers with an acknowledgement.
 
 After a successful key establishment, the freshly generated key is pushed to the key buffer, and loops back to the starting condition of wether the key buffer is full or not.
 
