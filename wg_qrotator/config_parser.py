@@ -5,7 +5,7 @@ import wg_qrotator.exceptions as e
 from wg_qrotator import constants
 
 CONFIG_PATH = None
-
+interface_to_manage = None
 
 def is_ip(val: str) -> bool:
     """Check if IP address is valid.
@@ -88,7 +88,7 @@ def kms_interface_is_supported(interface: int) -> bool:
 
 
 def is_valid_wg_interface(interface_name: str) -> bool:
-    """Check WireGuard network interface exists.
+    """Check if WireGuard network interface exists.
 
     Args:
         interface_name (str): network interface name
@@ -96,10 +96,25 @@ def is_valid_wg_interface(interface_name: str) -> bool:
     Returns:
         bool: True if the interface is a valid WireGuard network interface, False if not.
     """
+    global interface_to_manage
     result = subprocess.check_output(["wg", "show", "interfaces"], text=True)
     interfaces = result.strip().split()
+    interface_to_manage = interface_name
     return interface_name in interfaces
 
+def is_valid_wg_peer( peer_pub_key: str) -> bool:
+    """Check if WireGuard peer public key is valid. 
+    
+    Args:
+        peer_pub_key (str): peer public key
+        
+    Returns:
+        bool: True if the peer is valid, False if not.
+    """
+    result = subprocess.check_output(["wg", "show", interface_to_manage, "peers"], text=True)
+    peers = result.strip().split()
+    return peer_pub_key in peers
+    
 
 schema = Schema(
     {
@@ -113,11 +128,11 @@ schema = Schema(
             "sae": str,
             "interface": kms_interface_is_supported,
         },
-        "ip": is_ip,
+        Optional("ip"): is_ip,
         "port": is_port,
         "peers": [
             {
-                str: {
+                is_valid_wg_peer: {
                     "ip": is_ip,
                     "port": is_port,
                     "sae": str,
@@ -174,6 +189,7 @@ def read_config(config_filename: str) -> dict:
         with open(config_filename, "r") as file:
             config: dict = yaml.safe_load(file)
     except:
+        print(aqui)
         raise e.Config_exception(f"Cannot parse {config_filename}")
 
     if not config or not validate_config(config):

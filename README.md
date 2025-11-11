@@ -25,7 +25,7 @@ Next, create a `yaml` configuration file that includes information about the Wir
 Example of a configuration file:
 
 ```yaml
-interface: wg0  # Wireguard interface
+interface: wg0  # WireGuard interface to manage
 
 kms: 
   uri: "https://127.0.0.1:8443/api/v1/keys" # KMS URI
@@ -35,8 +35,7 @@ kms:
   sae: sae_001                              # SAE ID
   interface: 14                             # KMS interface (4 for ETSI QKD 004, 14 for ETSI QKD 014)
 
-# Ip & port where the rotator will be exposed to its peers
-ip: 10.0.0.1
+# Port where the rotator will be exposed to its peers on the specified WireGuard's interface 
 port: 2345
 
 # Information about the peers

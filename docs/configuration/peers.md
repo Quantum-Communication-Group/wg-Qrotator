@@ -53,6 +53,8 @@ Identifier of the KEM to be used in the extra key exchange. It accepts:
 - `ML_KEM_768`
 - `ML_KEM_1024`
 
+The definition of `extra_handshakes` is optional.
+
 ### `peers.<peer_wg_pub_key>.extra_handshakes.<algorithm_id>.secret_key` - `str`
 
 Path to the file containing the rotator's private key. It must be compatible with `<algorithm_id>`. See [genprivkey](/cli/gen_priv_key.html).

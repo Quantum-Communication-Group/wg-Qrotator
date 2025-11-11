@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "wg-Qrotator"
-version = "0.1.1"
+version = "0.1.2"
 description = "The quantum-enabled hybrid key rotator for WireGuard tunnels."
 authors = [
   { name = "Diogo Filipe Matos", email = "dftm@ua.pt" },
@@ -21,11 +21,12 @@ dependencies = [
   "keyring==25.6.0",
   "keyrings.alt==5.0.2",
   "pycryptodome==3.23.0",
+  "netifaces==0.11.0",
 ]
 requires-python = ">= 3.10"
 readme = "README.md"
 license = "AGPL-3.0"
-license-files = ["LICEN[CS]E.*"]
+license-files = ["LICENSE"]
 keywords = [
   "key rotator",
   "quantum",

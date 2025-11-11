@@ -22,7 +22,6 @@ kms:
   secret_key: sae_001.key
   sae: sae_001
   interface: 14
-ip: 10.0.0.1
 port: 2345
 peers:
   - IXqrmMgraj1Dn4LNKVL1zx4yDsroGNXRWy+yGYshfhY=: 

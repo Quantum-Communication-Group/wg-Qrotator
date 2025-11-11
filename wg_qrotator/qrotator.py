@@ -3,6 +3,7 @@ import sys
 import logging
 import platform
 import os
+import netifaces
 import signal
 import keyring
 from keyrings.alt.file import EncryptedKeyring
@@ -107,7 +108,7 @@ def start(config_file_path_or_interface: str) -> None:
     # Init my SAE
     my_sae = SAE(
         None,
-        config["ip"],
+        config.get("ip", netifaces.ifaddresses(WG_INTERFACE)[netifaces.AF_INET][0]["addr"]),
         config["port"],
         config["kms"]["sae"],
         (

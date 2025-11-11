@@ -29,9 +29,12 @@ def up(config_file_or_interface_name: str) -> int:
         print(f"Interface is not down. Stop it first", file=sys.stderr)
         return 1
     else:
+        if config_file_or_interface_name in state.interfaces:
+            config_file = state.interfaces.get(config_file_or_interface_name).config_file
+        else:
+            config_file = config_file_or_interface_name
         if (
-            config_file_or_interface_name in state.interfaces
-            or config_parser.read_config(config_file_or_interface_name)
+            config_parser.read_config(config_file)
         ):
             import keyring
             from keyrings.alt.file import EncryptedKeyring
@@ -84,6 +87,9 @@ def down(interface_name: str) -> int:
         except ProcessLookupError:
             state.update_interface_status(
                 interface_name, storage.InterfaceStatus.DOWN)
+        return 0
+    if interface_name in state.interfaces and state.interfaces[interface_name].status == storage.InterfaceStatus.DOWN:
+        print(f"{interface_name} is already down!")
         return 0
     else:
         print(f"Invalid interface {interface_name}", file=sys.stderr)

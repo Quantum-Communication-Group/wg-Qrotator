@@ -113,7 +113,7 @@ class Key_scheduler:
                 continue
 
             # Wait for the right time to rotate the key
-            while not self.shutdown_event.is_set() and not self.drop_current_key:
+            while not self.drop_current_key:
                 try:
                     seconds_since_last_handshake = (
                         int(time.time()) - self.last_handshake_epoch()
@@ -126,8 +126,8 @@ class Key_scheduler:
                             logger.error("Unable to rotate key.")
                         time.sleep(30)
                         break
-                    else:
-                        time.sleep(10)
+                    
+                    time.sleep(5)
                 except:
                     tb_str = traceback.format_exc()
                     time.sleep(10)

@@ -22,7 +22,7 @@ WireGuard network interface where the rotator will take effect.
 
 ### `ip` - `str`
 
-IP address where the rotator will be exposed. It is advised to use an IP assigned to the interface indicated in `interface`.
+Optional IP address where the rotator will be exposed. By default it will be used the IP assigned to the interface indicated in `interface` field.
 
 ### `port` - `int`
 
