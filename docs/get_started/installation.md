@@ -8,16 +8,10 @@ parent: Get started
 
 ## Installation
 
-Start by cloning `wg-Qrotator` repository:
+Install `wg-Qrotator` using the `pip` command:
 
 ```bash
-git clone https://github.com/Quantum-Communication-Group/wg-Qrotator
-```
-
-From the repository's root directory install `wg-Qrotator` using the `pip` command:
-
-```bash
-pip install .
+pip install wg-Qrotator
 ```
 
 If the installation finishes with success, the `wg-qrotator` command should now be available.

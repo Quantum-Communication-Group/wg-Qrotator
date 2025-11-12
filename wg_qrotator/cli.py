@@ -30,7 +30,8 @@ def up(config_file_or_interface_name: str) -> int:
         return 1
     else:
         if config_file_or_interface_name in state.interfaces:
-            config_file = state.interfaces.get(config_file_or_interface_name).config_file
+            config_file = state.interfaces.get(
+                config_file_or_interface_name).config_file
         else:
             config_file = config_file_or_interface_name
         if (
@@ -96,7 +97,7 @@ def down(interface_name: str) -> int:
         return 1
 
 
-def rm(interface_name: str):
+def rm(interface_name: str, force: bool = False):
     """`rm` command handler.
 
     Args:
@@ -112,11 +113,18 @@ def rm(interface_name: str):
             storage.InterfaceStatus.ERROR,
         ]:
             print(f"Removing interface {interface_name}")
-            config = config_parser.read_config(
-                state.interfaces.get(interface_name).config_file)
-            for peer in config["peers"]:
-                peer_ip = list(peer.values())[0]["ip"]
-                clear_cookie(interface_name, peer_ip)
+            try:
+                config = config_parser.read_config(
+                    state.interfaces.get(interface_name).config_file)
+                for peer in config["peers"]:
+                    peer_ip = list(peer.values())[0]["ip"]
+                    clear_cookie(interface_name, peer_ip)
+            except:
+                if not force:
+                    print(f"Configuration file of the tunnel is not valid. Use the same command with the '-f' flag to force its removal.", file=sys.stderr)
+                    return 1
+                else:
+                    print(f"Rotator removed but cookies were not cleared. Use the 'clearcookie' command to do so.")
             state.remove_interface(interface_name)
             return 0
         else:
@@ -228,6 +236,11 @@ def main() -> int:
     # rm command
     parser_rm = subparsers.add_parser("rm", help="remove a rotator")
     parser_rm.add_argument("interface_name", help="interface name")
+    parser_rm.add_argument(
+        "-f", "--force",
+        action="store_true",
+        help="force removal (no confirmation)"
+    )
 
     # genprivkey command
     parser_genprivkey = subparsers.add_parser(

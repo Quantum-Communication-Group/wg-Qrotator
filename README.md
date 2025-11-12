@@ -1,5 +1,5 @@
 <p align="center">
-<img width="208" height="70" alt="logo_with_white_text" src="docs/assets/logo_with_white_text.png" />
+<img width="208" height="70" alt="logo_with_white_text" src="https://raw.githubusercontent.com/Quantum-Communication-Group/wg-Qrotator/main/docs/assets/logo_with_white_text.png" />
 </p>
 
 `wg-Qrotator` is the quantum-enabled hybrid key rotator for [WireGuard](https://www.wireguard.com/) IP tunnels. 
@@ -17,7 +17,7 @@ sudo apt install python3 python3-pip libexplain-dev build-essential automake aut
 
 Then, from the root directory of the repository, install `wg-Qrotator`:
 ```bash
-pip install .
+pip install wg-Qrotator
 ```
 
 Next, create a `yaml` configuration file that includes information about the WireGuard network interface, the KMS and the peers.

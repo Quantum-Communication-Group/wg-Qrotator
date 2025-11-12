@@ -37,6 +37,10 @@ callouts:
     color: red
 
 nav_external_links:
+  - title: PyPI
+    url: https://pypi.org/project/wg-Qrotator/
+    hide_icon: false
+    opens_in_new_tab: true
   - title: IT Av Quantum Communication Group
     url: https://www.it.pt/Groups/Index/72
     hide_icon: false
