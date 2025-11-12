@@ -57,8 +57,8 @@ The definition of `extra_handshakes` is optional.
 
 ### `peers.<peer_wg_pub_key>.extra_handshakes.<algorithm_id>.secret_key` - `str`
 
-Path to the file containing the rotator's private key. It must be compatible with `<algorithm_id>`. See [genprivkey](/cli/gen_priv_key.html).
+Path to the file containing the rotator's private key. It must be compatible with `<algorithm_id>`. See [genprivkey](/wg-Qrotator/cli/gen_priv_key.html).
 
 ### `peers.<peer_wg_pub_key>.extra_handshakes.<algorithm_id>.public_key` - `str`
 
-Path to the file containing the peer's rotator public key. It must be compatible with `<algorithm_id>`. See [genpubkey](/cli/gen_pub_key.html).
+Path to the file containing the peer's rotator public key. It must be compatible with `<algorithm_id>`. See [genpubkey](/wg-Qrotator/cli/gen_pub_key.html).

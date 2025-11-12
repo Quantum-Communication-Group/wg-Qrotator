@@ -10,7 +10,7 @@ parent: Get started
 
 Each key rotator is attached to one WireGuard network interface. Multiple rotators can be running at the same time. Since each WireGuard interface has one or more peers (i.e. the hosts on the other side of the tunnels), each key rotator can handle one or more tunnels through the same network interface. 
 
-Each key rotator is configured via a YAML file, as described in [Configuration](/configuration). 
+Each key rotator is configured via a YAML file, as described in [Configuration](/wg-Qrotator/configuration). 
 
 A rotator can then be started by performing the following command:
 ```bash

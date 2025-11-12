@@ -8,9 +8,9 @@ nav_order: 3
 # Configuration
 
 `wg-Qrotator` key rotators are configured via a YAML configuration file. This file is divided into three configurations categories:
-- [general](/configuration/general.html) (`interface`, `debug`, `ip`, `port`)
-- [qkd](/configuration/qkd.html) (`kms`)
-- [peers](/configuration/peers.html) (`peers`)
+- [general](/wg-Qrotator/configuration/general.html) (`interface`, `debug`, `ip`, `port`)
+- [qkd](/wg-Qrotator/configuration/qkd.html) (`kms`)
+- [peers](/wg-Qrotator/configuration/peers.html) (`peers`)
 
 
 ```yml
