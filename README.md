@@ -53,7 +53,6 @@ peers:
       ip: 10.0.0.3
       port: 3456
       sae: sae_003
-      timer: 15
       mode: server
 ```
 

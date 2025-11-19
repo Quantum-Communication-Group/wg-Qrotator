@@ -189,7 +189,6 @@ def read_config(config_filename: str) -> dict:
         with open(config_filename, "r") as file:
             config: dict = yaml.safe_load(file)
     except:
-        print(aqui)
         raise e.Config_exception(f"Cannot parse {config_filename}")
 
     if not config or not validate_config(config):
