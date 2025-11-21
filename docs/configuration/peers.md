@@ -44,9 +44,11 @@ Operation mode of the rotator when interacting with its peer. It accepts:
 - `client` - it starts all the stages in the protocol.
 - `server` - it has a reactive behavior to the client's signals.
 
-Note that, between two rotator's one must have the `client` role and the other the `server` role.
+Note that, between two rotators, one must have the `client` role and the other the `server` role.
 
-### `peers.<peer_wg_pub_key>.extra_handshakes.<algorithm_id>` - `str`
+### `peers.<peer_wg_pub_key>.extra_handshakes` - `[str]`
+
+List of PQ-KEs to be used.
 
 Identifier of the KEM to be used in the extra key exchange. It accepts:
 - `ML_KEM_512`
@@ -54,11 +56,3 @@ Identifier of the KEM to be used in the extra key exchange. It accepts:
 - `ML_KEM_1024`
 
 The definition of `extra_handshakes` is optional.
-
-### `peers.<peer_wg_pub_key>.extra_handshakes.<algorithm_id>.secret_key` - `str`
-
-Path to the file containing the rotator's private key. It must be compatible with `<algorithm_id>`. See [genprivkey](/wg-Qrotator/cli/gen_priv_key.html).
-
-### `peers.<peer_wg_pub_key>.extra_handshakes.<algorithm_id>.public_key` - `str`
-
-Path to the file containing the peer's rotator public key. It must be compatible with `<algorithm_id>`. See [genpubkey](/wg-Qrotator/cli/gen_pub_key.html).

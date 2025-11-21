@@ -45,12 +45,13 @@ class Wg_qrotator_state:
         interfaces = {
             name: WireGuardInterface(
                 status=InterfaceStatus(data["status"]),
-                last_key_rotation=datetime.fromisoformat(
-                    data["last_key_rotation"])
-                if data["last_key_rotation"]
-                else None,
+                last_key_rotation=(
+                    datetime.fromisoformat(data["last_key_rotation"])
+                    if data["last_key_rotation"]
+                    else None
+                ),
                 pid=data["pid"],
-                config_file=data["config_file"]
+                config_file=data["config_file"],
             )
             for name, data in raw.items()
         }
@@ -67,12 +68,13 @@ class Wg_qrotator_state:
         self.interfaces = {
             name: WireGuardInterface(
                 status=InterfaceStatus(data["status"]),
-                last_key_rotation=datetime.fromisoformat(
-                    data["last_key_rotation"])
-                if data["last_key_rotation"]
-                else None,
+                last_key_rotation=(
+                    datetime.fromisoformat(data["last_key_rotation"])
+                    if data["last_key_rotation"]
+                    else None
+                ),
                 pid=data["pid"],
-                config_file=data["config_file"]
+                config_file=data["config_file"],
             )
             for name, data in raw.items()
         }
@@ -82,11 +84,13 @@ class Wg_qrotator_state:
             {
                 name: {
                     "status": iface.status.value,
-                    "last_key_rotation": iface.last_key_rotation.isoformat()
-                    if iface.last_key_rotation
-                    else None,
+                    "last_key_rotation": (
+                        iface.last_key_rotation.isoformat()
+                        if iface.last_key_rotation
+                        else None
+                    ),
                     "pid": iface.pid,
-                    "config_file": iface.config_file
+                    "config_file": iface.config_file,
                 }
                 for name, iface in self.interfaces.items()
             },
@@ -134,9 +138,15 @@ class Wg_qrotator_state:
             return
 
         name_width = max(len(name) for name in self.interfaces.keys())
-        status_width = max(len(iface.status.value) for iface in self.interfaces.values())
+        status_width = max(
+            len(iface.status.value) for iface in self.interfaces.values()
+        )
         last_key_rotation_width = max(
-            len(iface.last_key_rotation.isoformat() if iface.last_key_rotation else "never")
+            len(
+                iface.last_key_rotation.isoformat()
+                if iface.last_key_rotation
+                else "never"
+            )
             for iface in self.interfaces.values()
         )
 
@@ -150,4 +160,3 @@ class Wg_qrotator_state:
                 f"{iface.status.value:<{max(status_width, 6)}}  "
                 f"{iface.last_key_rotation.isoformat() if iface.last_key_rotation else 'never'}"
             )
-

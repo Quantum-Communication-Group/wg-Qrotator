@@ -1,5 +1,6 @@
-import json, socket, select, threading, time, hmac, hashlib, logging
+import json, socket, select, threading, time, hmac, hashlib, logging, base64
 from collections import defaultdict, deque
+from wolfcrypt.ciphers import MlDsaType, MlDsaPrivate, MlDsaPublic
 
 import wg_qrotator.exceptions as e
 from wg_qrotator import constants
@@ -20,9 +21,12 @@ class SAE:
 
 
 class Communicator:
-    def __init__(self, my_ip: str, my_port: int) -> None:
+    def __init__(
+        self, my_ip: str, my_port: int, my_auth_priv_key_filename: str
+    ) -> None:
         self.my_ip = my_ip
         self.my_port = my_port
+        self.my_auth_priv_key_filename = my_auth_priv_key_filename
         self._msg_id = 0
         self._message_queues = defaultdict(
             lambda: deque(maxlen=constants.MAX_MESSAGE_QUEUE_SIZE)
@@ -34,6 +38,8 @@ class Communicator:
         self._peer_cookies = {}
         self._peer_back_cookies = {}
         self._peer_hello_cookies = {}
+        self._peer_auth_keys = {}
+        self._use_dsa = {}
         self._seen_nonces = defaultdict(lambda: deque(maxlen=10000))
 
     @staticmethod
@@ -50,51 +56,79 @@ class Communicator:
             return True
         return False
 
+    def dsa_sign(self, data: str) -> str:
+        dsa_type = MlDsaType.ML_DSA_87
+        dsa_priv = MlDsaPrivate(dsa_type)
+        with open(self.my_auth_priv_key_filename, "r") as f:
+            b64_priv_key = f.read()
+        priv_bytes = base64.b64decode(b64_priv_key)
+        dsa_priv.decode_key(priv_bytes)
+        return base64.b64encode(dsa_priv.sign(data)).decode()
+
+    def dsa_verify(self, peer_ip: str, data: str, signature: str) -> bool:
+        dsa_type = MlDsaType.ML_DSA_87
+        dsa_pub = MlDsaPublic(dsa_type)
+        with open(self._peer_auth_keys[peer_ip], "r") as f:
+            b64_priv_key = f.read()
+        priv_bytes = base64.b64decode(b64_priv_key)
+        dsa_pub.decode_key(priv_bytes)
+        signature = base64.b64decode(signature)
+        return dsa_pub.verify(signature, data)
+
     def _generate_nonce(
-        self, peer_ip: str, msg_id: int, timestamp: float = None, source: str = None
+        self, peer_ip: str, data: dict, timestamp: float = None, source: str = None
     ) -> str:
-        if peer_ip not in self._peer_cookies:
-            raise ValueError("No shared key for peer")
         if timestamp is None:
-            timestamp = time.time()
+            data["timestamp"] = time.time()
+        data_encoded = f"{data}".encode("utf-8")
+        if self._use_dsa.get(peer_ip, False):
+            return self.dsa_sign(data_encoded), data
+        else:
+            if peer_ip not in self._peer_cookies:
+                raise ValueError("No shared key for peer")
 
-        key = self._peer_cookies[peer_ip]
-        if source == "back": 
-            key = self._peer_back_cookies[peer_ip]
-        elif source == "hello":
-            key = self._peer_hello_cookies[peer_ip]
+            key = self._peer_cookies[peer_ip]
+            if source == "back":
+                key = self._peer_back_cookies[peer_ip]
+            elif source == "hello":
+                key = self._peer_hello_cookies[peer_ip]
 
-        data = f"{msg_id}:{timestamp}".encode("utf-8")
-        return hmac.new(key, data, hashlib.sha256).hexdigest(), timestamp
+            return hmac.new(key, data_encoded, hashlib.sha256).hexdigest(), data
 
     def _verify_nonce(
-        self, peer_ip: str, msg_id: int, timestamp: float, received_nonce: str, is_hello: bool = False
+        self, peer_ip: str, data: dict, received_nonce: str, is_hello: bool = False
     ) -> bool:
         nonce_check = False
-        if peer_ip not in self._peer_cookies:
-            return False
-        expected_nonce, _ = self._generate_nonce(peer_ip, msg_id, timestamp)
-        if hmac.compare_digest(expected_nonce, received_nonce):
-            nonce_check = True
-
-        if not nonce_check and peer_ip in self._peer_back_cookies:
-            expected_nonce_back, _ = self._generate_nonce(
-                peer_ip, msg_id, timestamp, source="back"
-            )
-            if hmac.compare_digest(expected_nonce_back, received_nonce):
+        if self._use_dsa.get(peer_ip, False):
+            encoded_data = f"{data}".encode("utf-8")
+            nonce_check = self.dsa_verify(peer_ip, encoded_data, received_nonce)
+        else:
+            if peer_ip not in self._peer_cookies:
+                return False
+            expected_nonce, _ = self._generate_nonce(
+                peer_ip, data, 1234.0
+            )  # 1234 timestamp value just for it to be ignored by _generate_nonce
+            if hmac.compare_digest(expected_nonce, received_nonce):
                 nonce_check = True
 
-        if not nonce_check and is_hello and peer_ip in self._peer_hello_cookies:
-            expected_nonce_hello, _ = self._generate_nonce(
-                peer_ip, msg_id, timestamp, source="hello"
-            )
-            if hmac.compare_digest(expected_nonce_hello, received_nonce):
-                nonce_check = True
+            if not nonce_check and peer_ip in self._peer_back_cookies:
+                expected_nonce_back, _ = self._generate_nonce(
+                    peer_ip, data, 1234.0, source="back"
+                )
+                if hmac.compare_digest(expected_nonce_back, received_nonce):
+                    nonce_check = True
+
+            if not nonce_check and is_hello and peer_ip in self._peer_hello_cookies:
+                expected_nonce_hello, _ = self._generate_nonce(
+                    peer_ip, data, 1234.0, source="hello"
+                )
+                if hmac.compare_digest(expected_nonce_hello, received_nonce):
+                    nonce_check = True
 
         if not nonce_check:
             return False
 
-        if abs(time.time() - timestamp) > constants.NONCE_EXPIRY:
+        if abs(time.time() - data.get("timestamp")) > constants.NONCE_EXPIRY:
             return False
 
         if received_nonce in self._seen_nonces[peer_ip]:
@@ -148,20 +182,16 @@ class Communicator:
     def _process_incoming_message(self, msg: dict, addr) -> None:
         msg_type = msg.get("msg_type")
         peer_ip = addr[0]
-
-        if peer_ip in self._peer_cookies:
-            nonce = msg.get("nonce")
-            timestamp = msg.get("timestamp")
-            msg_id = msg.get("msg_id")
-            if (
-                not nonce
-                or timestamp is None
-                or not self._verify_nonce(
-                    peer_ip, msg_id, timestamp, nonce, is_hello=msg_type == "Hello"
-                )
+        if self._use_dsa.get(peer_ip, False) or peer_ip in self._peer_cookies:
+            nonce = msg.pop("nonce")
+            if not nonce or not self._verify_nonce(
+                peer_ip, msg, nonce, is_hello=msg_type == "Hello"
             ):
                 logger.info(f"Message from {addr} dropped due to invalid NONCE")
                 return  # drop invalid or replayed message
+        else:
+            logger.info(f"No authentication data for {addr}")
+            return  # drop invalid or replayed message
 
         # Automatic ping reply: send pong back to sender's listening port.
         if msg_type == "Ping":
@@ -187,17 +217,16 @@ class Communicator:
         self._message_queues[addr[0]].append(json.dumps(msg))
 
     def _send_raw_message(self, message: dict, dst_ip: str, dst_port: int) -> None:
-        if dst_ip in self._peer_cookies:
+        if self._use_dsa.get(dst_ip, False) or dst_ip in self._peer_cookies:
             if "msg_id" not in message:
                 msg_id = self._get_next_msg_id()
                 message["msg_id"] = msg_id
-            else:
-                msg_id = message["msg_id"]
-            nonce, timestamp = self._generate_nonce(dst_ip, msg_id)
+            nonce, message = self._generate_nonce(dst_ip, message)
             message["nonce"] = nonce
-            message["timestamp"] = timestamp
         else:
-            raise e.No_cookie_set_for_peer_exception(f"No cookie for {dst_ip}")
+            raise e.No_cookie_set_for_peer_exception(
+                f"Cannot authenticate message to {dst_ip}"
+            )
 
         data = json.dumps(message).encode("utf-8")
         header = len(data).to_bytes(4, "big")
@@ -211,7 +240,7 @@ class Communicator:
 
     def _get_next_msg_id(self) -> int:
         with self._id_lock:
-            self._msg_id += 1
+            self._msg_id = (self._msg_id + 1) % 65535  # from 0 to 2**16-1
             return self._msg_id
 
     def set_peer_cookie(self, peer_ip: str, cookie: bytes) -> None:
@@ -223,6 +252,12 @@ class Communicator:
     def set_peer_hello_cookie(self, peer_ip: str, cookie: bytes) -> None:
         self._peer_hello_cookies[peer_ip] = cookie
 
+    def set_peer_auth_key(self, peer_ip: str, key_filename: str) -> None:
+        self._peer_auth_keys[peer_ip] = key_filename
+
+    def set_use_dsa(self, peer_ip: str, use: bool) -> None:
+        self._use_dsa[peer_ip] = use
+
     def get_peer_cookie(self, peer_ip: str) -> bytes:
         return self._peer_back_cookies.get(peer_ip)
 
@@ -233,7 +268,7 @@ class Communicator:
             period, max_tries, other_sae_ip, message_types=["Ack"]
         )
         if not Communicator.is_acked(rcv_msg, msg_id):
-            raise e.Connection_timeout(period*max_tries)
+            raise e.Connection_timeout(period * max_tries)
 
     def send_message(
         self,
@@ -243,14 +278,15 @@ class Communicator:
         wait_for_ack: bool = False,
         timeout: int = 5,
     ) -> int:
-        if dst_ip in self._peer_cookies:
+        if self._use_dsa.get(dst_ip, False) or dst_ip in self._peer_cookies:
             msg_id = self._get_next_msg_id()
-            nonce, timestamp = self._generate_nonce(dst_ip, msg_id)
             message["msg_id"] = msg_id
+            nonce, message = self._generate_nonce(dst_ip, message)
             message["nonce"] = nonce
-            message["timestamp"] = timestamp
         else:
-            raise e.No_cookie_set_for_peer_exception(f"No cookie for {dst_ip}")
+            raise e.No_cookie_set_for_peer_exception(
+                f"Cannot authenticate message to {dst_ip}"
+            )
 
         message = json.dumps(message).encode("utf-8")
 

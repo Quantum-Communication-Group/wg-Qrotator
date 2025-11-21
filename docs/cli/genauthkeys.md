@@ -9,14 +9,15 @@ parent: CLI
 ## `down` command
 
 ```bash
-wg-qrotator down <interface_name>
+wg-qrotator genauthkeys <private_file_path> <public_file_path>
 ```
 
-Stop an existing rotator by providing the interface's name.
+Generate ML-DSA key-pair.
 
 ### Positional arguments
 
-- `interface` - name of the WireGuard interface managed by the rotator to be stopped
+- `private_filename` - path to the file where the private key will be stored
+- `public_filename` - path to the file where the public key will be stored
 
 ### Options
 
@@ -27,5 +28,5 @@ Stop an existing rotator by providing the interface's name.
 Stop a rotator for the interface `wg0` that was previously started:
 
 ```bash
-wg-qrotator down wg0
+wg-qrotator genauthkeys priv.key pub.key
 ```

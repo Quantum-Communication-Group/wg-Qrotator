@@ -7,6 +7,7 @@ from wg_qrotator import constants
 CONFIG_PATH = None
 interface_to_manage = None
 
+
 def is_ip(val: str) -> bool:
     """Check if IP address is valid.
 
@@ -102,19 +103,22 @@ def is_valid_wg_interface(interface_name: str) -> bool:
     interface_to_manage = interface_name
     return interface_name in interfaces
 
-def is_valid_wg_peer( peer_pub_key: str) -> bool:
-    """Check if WireGuard peer public key is valid. 
-    
+
+def is_valid_wg_peer(peer_pub_key: str) -> bool:
+    """Check if WireGuard peer public key is valid.
+
     Args:
         peer_pub_key (str): peer public key
-        
+
     Returns:
         bool: True if the peer is valid, False if not.
     """
-    result = subprocess.check_output(["wg", "show", interface_to_manage, "peers"], text=True)
+    result = subprocess.check_output(
+        ["wg", "show", interface_to_manage, "peers"], text=True
+    )
     peers = result.strip().split()
     return peer_pub_key in peers
-    
+
 
 schema = Schema(
     {
@@ -130,21 +134,16 @@ schema = Schema(
         },
         Optional("ip"): is_ip,
         "port": is_port,
+        "secret_auth_key": file_exists,
         "peers": [
             {
                 is_valid_wg_peer: {
+                    "public_auth_key": file_exists,
                     "ip": is_ip,
                     "port": is_port,
                     "sae": str,
                     "mode": is_mode,
-                    Optional("extra_handshakes"): [
-                        {
-                            kem_is_supported: {
-                                "secret_key": file_exists,
-                                "public_key": file_exists,
-                            }
-                        }
-                    ],
+                    Optional("extra_handshakes"): [kem_is_supported],
                 }
             }
         ],
@@ -189,7 +188,6 @@ def read_config(config_filename: str) -> dict:
         with open(config_filename, "r") as file:
             config: dict = yaml.safe_load(file)
     except:
-        print(aqui)
         raise e.Config_exception(f"Cannot parse {config_filename}")
 
     if not config or not validate_config(config):

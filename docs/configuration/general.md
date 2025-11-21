@@ -11,8 +11,9 @@ In this section of the configuration file, local-only parameters are defined.
 
 ```yaml
 interface: <wireguard_network_interface>
-ip: <rotator_ip_address>
 port: <rotator_port_number>
+secret_auth_key: <rotator_private_authentication_key_file>
+ip: <rotator_ip_address>
 debug: [true | false]
 ```
 
@@ -20,13 +21,17 @@ debug: [true | false]
 
 WireGuard network interface where the rotator will take effect.
 
-### `ip` - `str`
-
-Optional IP address where the rotator will be exposed. By default it will be used the IP assigned to the interface indicated in `interface` field.
-
 ### `port` - `int`
 
 Port number where the rotator will be exposed.
+
+### `secret_auth_key` - `str`
+
+Path to the file containing the rotator ML-DSA private key used for authentication.
+
+### `ip` - `str`
+
+Optional IP address where the rotator will be exposed. By default, it will be used the IP assigned to the interface indicated in `interface` field.
 
 ### `debug` - `bool`
 

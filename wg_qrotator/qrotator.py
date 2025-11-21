@@ -108,7 +108,9 @@ def start(config_file_path_or_interface: str) -> None:
     # Init my SAE
     my_sae = SAE(
         None,
-        config.get("ip", netifaces.ifaddresses(WG_INTERFACE)[netifaces.AF_INET][0]["addr"]),
+        config.get(
+            "ip", netifaces.ifaddresses(WG_INTERFACE)[netifaces.AF_INET][0]["addr"]
+        ),
         config["port"],
         config["kms"]["sae"],
         (
@@ -124,7 +126,15 @@ def start(config_file_path_or_interface: str) -> None:
     )
 
     # Init Communicator & start
-    communicator = Communicator(my_sae.ip, my_sae.port)
+    communicator = Communicator(
+        my_sae.ip,
+        my_sae.port,
+        (
+            config["secret_auth_key"]
+            if os.path.isabs(config["secret_auth_key"])
+            else os.path.join(config_base_dir_path, config["secret_auth_key"])
+        ),
+    )
     communicator.start_listening()
 
     state.add_interface(
@@ -143,29 +153,14 @@ def start(config_file_path_or_interface: str) -> None:
     for peer in config["peers"]:
         peer_id = list(peer.keys())[0]
         peer_info = list(peer.values())[0]
-        extra_handshakes = []
-        for key_source in peer_info.get("extra_handshakes", []):
-            source = list(key_source.keys())[0]
+        public_auth_key_file_path = (
+            peer_info["public_auth_key"]
+            if os.path.isabs(peer_info["public_auth_key"])
+            else os.path.join(config_base_dir_path, peer_info["public_auth_key"])
+        )
 
-            # generate new keys (this depends on your KEMs API)
-            secret_file = (
-                key_source[source]["secret_key"]
-                if os.path.isabs(key_source[source]["secret_key"])
-                else os.path.join(
-                    config_base_dir_path, key_source[source]["secret_key"]
-                )
-            )
-            public_file = (
-                key_source[source]["public_key"]
-                if os.path.isabs(key_source[source]["public_key"])
-                else os.path.join(
-                    config_base_dir_path, key_source[source]["public_key"]
-                )
-            )
+        communicator.set_peer_auth_key(peer_info["ip"], public_auth_key_file_path)
 
-            extra_handshakes.append(
-                {source: {"secret_key": secret_file, "public_key": public_file}}
-            )
         other_sae = SAE(
             peer_id,
             peer_info["ip"],
@@ -181,7 +176,7 @@ def start(config_file_path_or_interface: str) -> None:
             debug=config.get("debug", False),
             shutdown_event=shutdown_event,
             communicator=communicator,
-            key_queue_max_size=constants.KEY_BUFFER_SIZE
+            key_queue_max_size=constants.KEY_BUFFER_SIZE,
         )
         rotator = Rotator(
             peer_info["mode"],
@@ -197,7 +192,7 @@ def start(config_file_path_or_interface: str) -> None:
                     config_base_dir_path, config["kms"]["root_certificate"]
                 )
             ),
-            extra_handshakes,
+            peer_info.get("extra_handshakes", []),
             communicator,
             key_scheduler,
             debug=config.get("debug", False),

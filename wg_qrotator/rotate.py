@@ -71,6 +71,7 @@ class Rotator:
         """Close key streams."""
         if self.kms_interface == 4 and self.kms.ksid:
             self.kms.close()
+        self.key_scheduler.drop_current_key = True
 
     def __update_rotation_counter(self) -> None:
         """Increment total rotation counter."""
@@ -117,9 +118,9 @@ class Rotator:
             return key
         logger.debug(f"PQ key -> {base64.b64encode(other_key).decode()}")
         final_bytes = bytes(x ^ y for x, y in zip(base64.b64decode(key), other_key))
-        
+
         print(time.time() - st)
-        
+
         return base64.b64encode(final_bytes).decode()
 
     def __ack(self, msg_id: int) -> None:
@@ -144,10 +145,11 @@ class Rotator:
         """
         if set_in_communicator:
             current_cookie = self.communicator.get_peer_cookie(self.other_sae.ip)
-            if current_cookie is None:
-                current_cookie = bytes(32) 
+            if current_cookie is not None:
+                self.communicator.set_peer_back_cookie(
+                    self.other_sae.ip, current_cookie
+                )
             self.communicator.set_peer_cookie(self.other_sae.ip, cookie)
-            self.communicator.set_peer_back_cookie(self.other_sae.ip, current_cookie)
 
         if persist:
             salt = (
@@ -159,10 +161,20 @@ class Rotator:
             self.communicator.set_peer_hello_cookie(self.other_sae.ip, hello_cookie)
             with lock:
                 keyring.set_password(
-                    f"wg_qrotator",
+                    "wg_qrotator",
                     f"{self.wg_interface}_{self.other_sae.ip}",
                     base64.b64encode(cookie).decode("utf-8"),
                 )
+
+    def abort(self) -> None:
+        """Send key rotation abort message."""
+        self.communicator.send_message(
+            {
+                "msg_type": "Abort round",
+            },
+            self.other_sae.ip,
+            self.other_sae.port,
+        )
 
     def __get_cookie(self) -> bytes:
         """Get cookie (32 bytes) or return zeroed cookie."""
@@ -170,7 +182,7 @@ class Rotator:
             "wg_qrotator", f"{self.wg_interface}_{self.other_sae.ip}"
         )
         if not val:
-            return bytes(32)
+            return None
         try:
             cookie = base64.b64decode(val, validate=True)
         except (TypeError, binascii.Error) as err:
@@ -183,36 +195,16 @@ class Rotator:
             return bytes(32)
         return cookie
 
-    def __set_bootstrap_cookie(self) -> None:
-        """Set bootstrap cookie. Always different from previous one to prevent message relay from the previous session."""
-        old_cookie = self.__get_cookie()
-        salt = (
-            self.my_sae.sae_id.encode() + self.other_sae.sae_id.encode()
-            if self.mode == "server"
-            else self.other_sae.sae_id.encode() + self.my_sae.sae_id.encode()
-        )
-        new_cookie = self.__compute_key_hash(old_cookie, salt, return_bytes=True)
-        self.__update_cookie(new_cookie, persist=False)
-
-    def abort(self) -> None:
-        """Send key rotation abort message."""
-        self.communicator.send_message(
-            {
-                "msg_type": "Abort round",
-            },
-            self.other_sae.ip,
-            self.other_sae.port,
-        )
-
     # Hello & synch messages
     def initial_workflow(self) -> None:
         """Rotator's bootstrap workflow."""
-        kems = (
-            [list(kem.keys())[0] for kem in self.extra_handshakes]
-            if self.extra_handshakes
-            else []
-        )
-        self.__set_bootstrap_cookie()
+        self.key_scheduler.halt = True
+        auth_cookie = self.__get_cookie()
+        if auth_cookie is None:
+            self.communicator.set_use_dsa(self.other_sae.ip, True)
+        else:
+            self.communicator.set_peer_cookie(self.other_sae.ip, auth_cookie)
+            self.communicator.set_peer_hello_cookie(self.other_sae.ip, auth_cookie)
         self.rotation_counter = 0
         self.key_scheduler.reset_key_buffer()
         if self.mode == "client":
@@ -226,7 +218,7 @@ class Rotator:
                         {
                             "msg_type": "Hello",
                             "start_at": start_time.strftime("%Y-%m-%d %H:%M:%S"),
-                            "kems": kems,
+                            "kems": self.extra_handshakes,
                         },
                         self.other_sae.ip,
                         self.other_sae.port,
@@ -263,7 +255,7 @@ class Rotator:
                 self.start_at = None
                 return
 
-            if msg.get("kems") != kems:
+            if msg.get("kems") != self.extra_handshakes:
                 logger.error(
                     f"PQ-KE KEMs selection does not match. Rotator cannot be started for {self.other_sae.id}"
                 )
@@ -326,7 +318,7 @@ class Rotator:
             self.my_sae.sae_id.encode()
             + self.other_sae.sae_id.encode()
             + str(self.rotation_counter).encode(),
-            use_sha_512=True
+            use_sha_512=True,
         )
 
         self.communicator.send_message(
@@ -352,7 +344,10 @@ class Rotator:
             new_cookie,
             set_in_communicator=self.rotation_counter % constants.KEY_BUFFER_SIZE == 0,
         )
-
+        if self.rotation_counter == 0:
+            self.communicator.set_use_dsa(self.other_sae.ip, False)
+            self.key_scheduler.halt = False
+            time.sleep(5)
         self.__update_rotation_counter()
 
     def server_rotation(self) -> None:
@@ -416,7 +411,7 @@ class Rotator:
             self.other_sae.sae_id.encode()
             + self.my_sae.sae_id.encode()
             + str(self.rotation_counter).encode(),
-            use_sha_512=True
+            use_sha_512=True,
         )
 
         # Check if hashes match
@@ -437,7 +432,10 @@ class Rotator:
                 set_in_communicator=self.rotation_counter % constants.KEY_BUFFER_SIZE
                 == 0,
             )
-
+            if self.rotation_counter == 0:
+                self.communicator.set_use_dsa(self.other_sae.ip, False)
+                self.key_scheduler.halt = False
+                time.sleep(5)
             self.__update_rotation_counter()
         else:
             logger.error(

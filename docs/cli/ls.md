@@ -15,7 +15,7 @@ wg-qrotator ls
 List all rotators. Output includes the interface name, the status, and the timestamp of the last key rotation.
 
 In the current implementation, a rotator can be in one of the following three states:
-- `down` - the rotator was created but it is not running.
+- `down` - the rotator was created, but it is not running.
 - `hold` - the rotator is waiting or during the bootstrap phase.
 - `up` - the rotator is up and running.
 
@@ -27,7 +27,7 @@ None.
 
 ### Options
 
-- `-h`, `--help` -  show help message
+- `-h`, `--help` - show help message
 
 ### Examples
 

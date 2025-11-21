@@ -20,7 +20,7 @@ Removes the rotator attached to the indicated interface from the internal state 
 
 ### Options
 
-- `-h`, `--help` -  show help message
+- `-h`, `--help` - show help message
 
 ### Examples
 

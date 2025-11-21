@@ -31,12 +31,11 @@ def up(config_file_or_interface_name: str) -> int:
     else:
         if config_file_or_interface_name in state.interfaces:
             config_file = state.interfaces.get(
-                config_file_or_interface_name).config_file
+                config_file_or_interface_name
+            ).config_file
         else:
             config_file = config_file_or_interface_name
-        if (
-            config_parser.read_config(config_file)
-        ):
+        if config_parser.read_config(config_file):
             import keyring
             from keyrings.alt.file import EncryptedKeyring
 
@@ -48,6 +47,7 @@ def up(config_file_or_interface_name: str) -> int:
             env["KEYRING_PASSWORD"] = getpass.getpass(
                 "Enter keyring password to unlock it: "
             )
+
             try:
                 subprocess.Popen(
                     [
@@ -59,6 +59,7 @@ def up(config_file_or_interface_name: str) -> int:
                     stderr=subprocess.DEVNULL,
                     env=env,
                 )
+
             except Exception as e:
                 print(f"Failed to start rotator: {e}", file=sys.stderr)
                 return 1
@@ -76,7 +77,9 @@ def down(interface_name: str) -> int:
         int: return code (0 indicates success)
     """
     state = storage.Wg_qrotator_state.load()
-    if interface_name in state.interfaces and state.interfaces[interface_name].status in [
+    if interface_name in state.interfaces and state.interfaces[
+        interface_name
+    ].status in [
         storage.InterfaceStatus.UP,
         storage.InterfaceStatus.HOLDING,
     ]:
@@ -86,10 +89,12 @@ def down(interface_name: str) -> int:
             while psutil.pid_exists(state.interfaces.get(interface_name).pid):
                 time.sleep(1)
         except ProcessLookupError:
-            state.update_interface_status(
-                interface_name, storage.InterfaceStatus.DOWN)
+            state.update_interface_status(interface_name, storage.InterfaceStatus.DOWN)
         return 0
-    if interface_name in state.interfaces and state.interfaces[interface_name].status == storage.InterfaceStatus.DOWN:
+    if (
+        interface_name in state.interfaces
+        and state.interfaces[interface_name].status == storage.InterfaceStatus.DOWN
+    ):
         print(f"{interface_name} is already down!")
         return 0
     else:
@@ -115,16 +120,22 @@ def rm(interface_name: str, force: bool = False):
             print(f"Removing interface {interface_name}")
             try:
                 config = config_parser.read_config(
-                    state.interfaces.get(interface_name).config_file)
+                    state.interfaces.get(interface_name).config_file
+                )
                 for peer in config["peers"]:
                     peer_ip = list(peer.values())[0]["ip"]
                     clear_cookie(interface_name, peer_ip)
             except:
                 if not force:
-                    print(f"Configuration file of the tunnel is not valid. Use the same command with the '-f' flag to force its removal.", file=sys.stderr)
+                    print(
+                        f"Configuration file of the tunnel is not valid. Use the same command with the '-f' flag to force its removal.",
+                        file=sys.stderr,
+                    )
                     return 1
                 else:
-                    print(f"Rotator removed but cookies were not cleared. Use the 'clearcookie' command to do so.")
+                    print(
+                        f"Rotator removed but cookies were not cleared. Use the 'clearcookie' command to do so."
+                    )
             state.remove_interface(interface_name)
             return 0
         else:
@@ -143,32 +154,6 @@ def ls() -> int:
     """
     state = storage.Wg_qrotator_state.load()
     state.formatted_print()
-    return 0
-
-
-def gen_priv_key(kem: str) -> int:
-    """`genprivkey` command handler.
-
-    Args:
-        kem (str): KEM identifier
-
-    Returns:
-        int: return code
-    """
-    key_gen.gen_priv_key(kem)
-    return 0
-
-
-def gen_pub_key(kem: str) -> int:
-    """`genpubkey` command handler.
-
-    Args:
-        kem (str): KEM identifier
-
-    Returns:
-        int: return code
-    """
-    key_gen.gen_pub_key(kem)
     return 0
 
 
@@ -191,11 +176,23 @@ def clear_cookie(interface_name: str, peer_ip: str) -> int:
     keyring.set_keyring(EncryptedKeyring())
     try:
         with lock:
-            keyring.delete_password(
-                f"wg_qrotator", f"{interface_name}_{peer_ip}")
+            keyring.delete_password(f"wg_qrotator", f"{interface_name}_{peer_ip}")
     except:
         print("Error while deleting cookie", file=sys.stderr)
         return 1
+    return 0
+
+
+def genauthkeys(private_file_path: str, public_file_path: str) -> int:
+    """`genauthkeys` command handler.
+
+    Args:
+        kem (str): KEM identifier
+
+    Returns:
+        int: return code
+    """
+    key_gen.gen_id(private_file_path, public_file_path)
     return 0
 
 
@@ -204,8 +201,7 @@ HANDLER = {
     "down": down,
     "rm": rm,
     "ls": ls,
-    "genprivkey": gen_priv_key,
-    "genpubkey": gen_pub_key,
+    "genauthkeys": genauthkeys,
     "clearcookie": clear_cookie,
 }
 
@@ -226,7 +222,8 @@ def main() -> int:
     # up command
     parser_up = subparsers.add_parser("up", help="start a rotator")
     parser_up.add_argument(
-        "config_file_or_interface_name", help="path to the rotator's config file or, if rotator already exists, interface name"
+        "config_file_or_interface_name",
+        help="path to the rotator's config file or, if rotator already exists, interface name",
     )
 
     # down command
@@ -237,35 +234,25 @@ def main() -> int:
     parser_rm = subparsers.add_parser("rm", help="remove a rotator")
     parser_rm.add_argument("interface_name", help="interface name")
     parser_rm.add_argument(
-        "-f", "--force",
-        action="store_true",
-        help="force removal (no confirmation)"
+        "-f", "--force", action="store_true", help="force removal (no confirmation)"
     )
 
-    # genprivkey command
-    parser_genprivkey = subparsers.add_parser(
-        "genprivkey", help="generate private key")
-    parser_genprivkey.add_argument(
-        "kem",
-        help=f"Key Encapsulation Mechanism identifier. Options: {constants.SUPPORTED_KEMS}",
-    )
-
-    # gen_pub_key command
-    parser_genpubkey = subparsers.add_parser(
-        "genpubkey", help="generate public key from private key"
-    )
-    parser_genpubkey.add_argument(
-        "kem",
-        help=f"Key Encapsulation Mechanism identifier. Options: {constants.SUPPORTED_KEMS}",
-    )
-
-    # clear_cookie
+    # clearcookie command
     parser_clear_cookie = subparsers.add_parser(
         "clearcookie", help="clear peer's cookie"
     )
     parser_clear_cookie.add_argument("interface_name", help="interface name")
-    parser_clear_cookie.add_argument(
-        "peer_ip", help="peer IP address"
+    parser_clear_cookie.add_argument("peer_ip", help="peer IP address")
+
+    # genauthkeys command
+    parser_genauthkeys = subparsers.add_parser(
+        "genauthkeys", help="generate ML-DSA authentication key pair"
+    )
+    parser_genauthkeys.add_argument(
+        "private_file_path", help="Name of the file to store the private key"
+    )
+    parser_genauthkeys.add_argument(
+        "public_file_path", help="Name of the file to store the public key"
     )
 
     # ls

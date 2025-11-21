@@ -30,6 +30,7 @@ class Key_scheduler:
         self.storage = storage.Wg_qrotator_state.load()
         self.communicator = communicator
         self.other_sae = other_sae
+        self.halt = False
 
     def update_psk(self, key) -> bool:
         """Rotate WireGuard's tunnel PSK.
@@ -43,7 +44,7 @@ class Key_scheduler:
         if self.drop_current_key:
             self.drop_current_key = False
             return False
-        
+
         if self.debug:
             logger.debug(f"PSK -> {key}")
 
@@ -62,9 +63,10 @@ class Key_scheduler:
         if self.communicator.send_ping(self.other_sae.ip, self.other_sae.port):
             result = subprocess.run(
                 f"wg set {self.wg_interface} peer {self.wg_peer_id} preshared-key k{safe_peer_id}.key",
-                shell=True
+                shell=True,
             )
-            self.storage.update_rotation_timestamp(self.wg_interface)
+            if result.returncode == 0:
+                self.storage.update_rotation_timestamp(self.wg_interface)
 
         # Delete file
         os.remove(f"k{safe_peer_id}.key")
@@ -105,6 +107,10 @@ class Key_scheduler:
     def main(self):
         """Key rotation scheduler main workflow."""
         while not self.shutdown_event.is_set():
+            if self.halt:
+                time.sleep(1)
+                continue
+
             # Get a key from the key buffer (blocking)
             try:
                 psk = self.key_buffer.get(timeout=10)
@@ -113,7 +119,7 @@ class Key_scheduler:
                 continue
 
             # Wait for the right time to rotate the key
-            while not self.drop_current_key:
+            while not self.drop_current_key and not self.shutdown_event.is_set():
                 try:
                     seconds_since_last_handshake = (
                         int(time.time()) - self.last_handshake_epoch()
@@ -126,7 +132,7 @@ class Key_scheduler:
                             logger.error("Unable to rotate key.")
                         time.sleep(30)
                         break
-                    
+
                     time.sleep(5)
                 except:
                     tb_str = traceback.format_exc()

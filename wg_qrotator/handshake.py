@@ -36,8 +36,8 @@ def handshake(
 
     Args:
         key_sources (list): Information about key exchanges to be performed
-        role (str): _description_
-        communicator (Communicator): _description_
+        role (str): role to be played
+        communicator (Communicator): Communicator instance to communicate with peer
         other_sae (SAE): Information about the peer to perform the key exchange with.
 
     Returns:
@@ -46,60 +46,95 @@ def handshake(
     combined_key = b"\x00" * 32
 
     for key_source in key_sources:
-        source = list(key_source.keys())[0]
-        params = list(key_source.values())[0]
+        if key_source in constants.SUPPORTED_KEMS:
+            kem_type = get_alg(key_source)
 
-        if source in constants.SUPPORTED_KEMS:
-            kem_type = get_alg(source)
-            kem_my_priv = MlKemPrivate(kem_type)
+            # Generate ephemeral key-pair
+            kem_my_priv = MlKemPrivate.make_key(kem_type)
+
             kem_peer_pub = MlKemPublic(kem_type)
 
-            # Load private key
-            with open(params.get("secret_key"), "rb") as f:
-                priv_bytes = base64.b64decode(f.read())
-                kem_my_priv.decode_key(priv_bytes)
-
-            # Load peer public key
-            with open(params.get("public_key"), "rb") as f:
-                pub_bytes = base64.b64decode(f.read())
-                kem_peer_pub.decode_key(pub_bytes)
-
             if role == "client":
-                # Client encapsulates to peer's public key
-                result_0, ct = kem_peer_pub.encapsulate()
-
+                # Send ephemeral public key
                 communicator.send_message(
-                    {"msg_type": source, "kem": base64.b64encode(ct).decode()},
+                    {
+                        "msg_type": f"{key_source}_ephemeral",
+                        "pub_key": base64.b64encode(
+                            kem_my_priv.encode_pub_key()
+                        ).decode(),
+                    },
                     other_sae.ip,
                     other_sae.port,
                 )
 
-                # Receive peer ciphertext and decapsulate
+                # Receive peer's ephemeral public key
                 msg = communicator.wait_for_message(
                     constants.LISTEN_TRIES_PERIOD,
                     constants.LISTEN_TIMEOUT_TRIES,
                     other_sae.ip,
-                    message_types=[source],
+                    message_types=[f"{key_source}_ephemeral"],
+                )
+                kem_peer_pub.decode_key(base64.b64decode(msg.get("pub_key")))
+
+                # Send encapsulated key
+                result_0, ct = kem_peer_pub.encapsulate()
+                communicator.send_message(
+                    {
+                        "msg_type": key_source,
+                        "kem": base64.b64encode(ct).decode(),
+                    },
+                    other_sae.ip,
+                    other_sae.port,
+                )
+
+                # Receive ciphertext and decapsulate
+                msg = communicator.wait_for_message(
+                    constants.LISTEN_TRIES_PERIOD,
+                    constants.LISTEN_TIMEOUT_TRIES,
+                    other_sae.ip,
+                    message_types=[key_source],
                 )
                 ct_peer = base64.b64decode(msg.get("kem"))
                 result_1 = kem_my_priv.decapsulate(ct_peer)
-
             else:
-                # Server waits for encapsulated key
+                # Receive peer's ephemeral public key
                 msg = communicator.wait_for_message(
                     constants.LISTEN_TRIES_PERIOD,
                     constants.LISTEN_TIMEOUT_TRIES,
                     other_sae.ip,
-                    message_types=[source],
+                    message_types=[f"{key_source}_ephemeral"],
+                )
+                kem_peer_pub.decode_key(base64.b64decode(msg.get("pub_key")))
+
+                # Send ephemeral public key
+                communicator.send_message(
+                    {
+                        "msg_type": f"{key_source}_ephemeral",
+                        "pub_key": base64.b64encode(
+                            kem_my_priv.encode_pub_key()
+                        ).decode(),
+                    },
+                    other_sae.ip,
+                    other_sae.port,
+                )
+
+                # Receive ciphertext and decapsulate
+                msg = communicator.wait_for_message(
+                    constants.LISTEN_TRIES_PERIOD,
+                    constants.LISTEN_TIMEOUT_TRIES,
+                    other_sae.ip,
+                    message_types=[key_source],
                 )
                 ct_peer = base64.b64decode(msg.get("kem"))
                 result_0 = kem_my_priv.decapsulate(ct_peer)
 
-                # Encapsulate back to client's public key
+                # Send encapsulated key
                 result_1, ct = kem_peer_pub.encapsulate()
-
                 communicator.send_message(
-                    {"msg_type": source, "kem": base64.b64encode(ct).decode()},
+                    {
+                        "msg_type": key_source,
+                        "kem": base64.b64encode(ct).decode(),
+                    },
                     other_sae.ip,
                     other_sae.port,
                 )

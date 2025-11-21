@@ -1,40 +1,23 @@
 import base64
-import sys
-from wolfcrypt.ciphers import MlKemPrivate
-
-from wg_qrotator import handshake
+from wolfcrypt.ciphers import MlDsaType, MlDsaPrivate
 
 
-def gen_priv_key(kem: str):
-    """Generate private key encoded as base64 for the provided KEM and output it to stdout.
+def gen_id(priv_filename: str, pub_filename: str):
+    """Generate ML-DSA-87 key pair encoded as base64 and output it to two files.
 
     Args:
-        kem (str): KEM identifier.
+        priv_filename (str): name of the file to store the private key.
+        pub_filename (str): name of the file to store the public key.
     """
-    kem_type = handshake.get_alg(kem)
+    alg_type = MlDsaType.ML_DSA_87
 
-    kem_priv = MlKemPrivate.make_key(kem_type)
-    b64priv_key = base64.b64encode(kem_priv.encode_priv_key())
+    dsa_priv = MlDsaPrivate.make_key(alg_type)
+    b64priv_key = base64.b64encode(dsa_priv.encode_priv_key())
 
-    print(b64priv_key.decode())
+    with open(priv_filename, "w") as f:
+        f.write(b64priv_key.decode())
 
+    b64pub_key = base64.b64encode(dsa_priv.encode_pub_key())
 
-def gen_pub_key(kem: str):
-    """Generate public key encoded as base64 from private key retrieved from stdin for the
-    provided KEM and output it to stdout.
-
-    Args:
-        kem (str): KEM identifier.
-    """
-    kem_type = handshake.get_alg(kem)
-    kem_priv = MlKemPrivate(kem_type)
-
-    b64_priv_key = sys.stdin.read()
-
-    priv_bytes = base64.b64decode(b64_priv_key)
-    kem_priv.decode_key(priv_bytes)
-
-    pub_key = kem_priv.encode_pub_key()
-    b64pub_key = base64.b64encode(pub_key)
-
-    print(b64pub_key.decode())
+    with open(pub_filename, "w") as f:
+        f.write(b64pub_key.decode())
