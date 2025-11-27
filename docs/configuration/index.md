@@ -17,7 +17,6 @@ nav_order: 3
 interface: <wireguard_network_interface>
 port: <rotator_port_number>
 secret_auth_key: <rotator_private_authentication_key_file>
-ip: <rotator_ip>
 debug: [true|false]
 
 kms: 

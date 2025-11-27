@@ -6,8 +6,8 @@ def gen_id(priv_filename: str, pub_filename: str):
     """Generate ML-DSA-87 key pair encoded as base64 and output it to two files.
 
     Args:
-        priv_filename (str): name of the file to store the private key.
-        pub_filename (str): name of the file to store the public key.
+        priv_filename (str): Path to the file where the private key will be stored.
+        pub_filename (str): Path to the file where the public key will be stored.
     """
     alg_type = MlDsaType.ML_DSA_87
 

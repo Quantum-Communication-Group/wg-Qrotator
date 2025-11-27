@@ -34,6 +34,11 @@ class Wg_qrotator_state:
 
     @classmethod
     def load(cls) -> "Wg_qrotator_state":
+        """Load file containing current state.
+
+        Returns:
+            Wg_qrotator_state: Wg_qrotator_state instance containing the data in the file.
+        """
         with FileLock(cls.LOCK_FILE):
             if not os.path.exists(cls.STATE_FILE):
                 with open(cls.STATE_FILE, "w") as f:
@@ -80,6 +85,11 @@ class Wg_qrotator_state:
         }
 
     def _to_json(self) -> str:
+        """Convert the state data to JSON.
+
+        Returns:
+            str: JSON data.
+        """
         return json.dumps(
             {
                 name: {
@@ -98,14 +108,21 @@ class Wg_qrotator_state:
         )
 
     def _write_file(self):
+        """Persist state."""
         with open(self.STATE_FILE, "w") as f:
             f.write(self._to_json())
 
     def update(self):
+        """Update persisted state."""
         with FileLock(self.LOCK_FILE):
             self._update_from_file()
 
     def update_rotation_timestamp(self, interface_name: str):
+        """Update the latest rotation timestamp.
+
+        Args:
+            interface_name (str): Interface name that was rotated.
+        """
         with FileLock(self.LOCK_FILE):
             self._update_from_file()
             if interface_name in self.interfaces:
@@ -113,18 +130,35 @@ class Wg_qrotator_state:
             self._write_file()
 
     def add_interface(self, interface_name: str, interface_info: WireGuardInterface):
+        """Add interface (i.e. a new rotator instance) to the state.
+
+        Args:
+            interface_name (str): Interface name.
+            interface_info (WireGuardInterface): Information about the rotator.
+        """
         with FileLock(self.LOCK_FILE):
             self._update_from_file()
             self.interfaces[interface_name] = interface_info
             self._write_file()
 
     def remove_interface(self, interface_name: str):
+        """Remove interface (i.e. remove rotator instance) from the state.
+
+        Args:
+            interface_name (str): Interface name.
+        """
         with FileLock(self.LOCK_FILE):
             self._update_from_file()
             self.interfaces.pop(interface_name, None)
             self._write_file()
 
     def update_interface_status(self, interface_name: str, status: InterfaceStatus):
+        """Update interface status (i.e. rotator instance status) in the state.
+
+        Args:
+            interface_name (str): Interface name.
+            status (InterfaceStatus): Rotator status.
+        """
         with FileLock(self.LOCK_FILE):
             self._update_from_file()
             if interface_name in self.interfaces:
@@ -132,6 +166,7 @@ class Wg_qrotator_state:
             self._write_file()
 
     def formatted_print(self):
+        """State formatted print."""
         self._update_from_file()
         if not self.interfaces:
             print("No rotators found")

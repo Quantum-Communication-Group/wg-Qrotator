@@ -18,7 +18,7 @@ Nonetheless, this approach only provides guarantees against a third-party (Eve) 
 
 ## Ephemeral keys
 
-To ensure Perfect Forward Secrecy (PFS), for each PQ-KE an ephemeral key-pair is generated for each peer. Since, the communication channel is authenticated, this comes with no security impact, and also reduces the configuration overhead simplifying the user experience.
+To ensure Perfect Forward Secrecy (PFS), for each PQ-KE an ephemeral key-pair is generated for each peer. Since the communication channel is authenticated, this comes with no security impact, and also reduces the configuration overhead simplifying the user experience.
 
 ## Logs
 

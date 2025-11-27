@@ -73,7 +73,7 @@ class Key_scheduler:
 
         return False if not result or result.returncode != 0 else True
 
-    def reset_key_buffer(self):
+    def reset_key_buffer(self) -> None:
         """Clear shared key buffer."""
         while not self.key_buffer.empty():
             _ = self.key_buffer.get()
@@ -104,7 +104,7 @@ class Key_scheduler:
         else:
             return 0
 
-    def main(self):
+    def main(self) -> None:
         """Key rotation scheduler main workflow."""
         while not self.shutdown_event.is_set():
             if self.halt:

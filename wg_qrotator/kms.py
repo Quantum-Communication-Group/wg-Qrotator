@@ -82,6 +82,8 @@ class ETSI_004:
         self._open_connect()
 
     def _load_so(self):
+        """Load the shared object containing the interface for ETSI GS QKD 004
+        """
         self.client_api = ctypes.CDLL(self._api_so)
         # Define argument types and return types for the functions
         self.client_api.openConnect.argtypes = [

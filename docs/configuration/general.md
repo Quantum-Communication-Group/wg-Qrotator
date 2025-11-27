@@ -27,13 +27,13 @@ Port number where the rotator will be exposed.
 
 ### `secret_auth_key` - `str`
 
-Path to the file containing the rotator ML-DSA private key used for authentication.
+Path to the file containing the rotator ML-DSA-87 private key used for authentication.
 
-### `ip` - `str`
+### `ip` - `str` - `optional` 
 
 Optional IP address where the rotator will be exposed. By default, it will be used the IP assigned to the interface indicated in `interface` field.
 
-### `debug` - `bool`
+### `debug` - `bool` - `optional` 
 
 Optional debug flag. Defaults to `false`.
 

@@ -201,6 +201,7 @@ class Rotator:
         self.key_scheduler.halt = True
         auth_cookie = self.__get_cookie()
         if auth_cookie is None:
+            logger.info(f"Using ML-DSA authentication")
             self.communicator.set_use_dsa(self.other_sae.ip, True)
         else:
             self.communicator.set_peer_cookie(self.other_sae.ip, auth_cookie)
@@ -370,6 +371,7 @@ class Rotator:
         # If Hello message was received, it means that the peer has restarted
         if msg["msg_type"] == "Hello":
             self.start_at = None
+            self.__clear()
             return
         key_id = msg.get("key_id")
 
@@ -478,6 +480,7 @@ class Rotator:
                         continue
             except e.Connection_timeout:
                 self.start_at = None
+                self.__clear()
             except:
                 logger.exception("Rotation round aborted with %s", self.other_sae.id)
                 time.sleep(1)

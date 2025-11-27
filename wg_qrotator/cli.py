@@ -26,7 +26,10 @@ def up(config_file_or_interface_name: str) -> int:
         and state.interfaces[config_file_or_interface_name].status
         != storage.InterfaceStatus.DOWN
     ):
-        print(f"Interface is not down. Stop it first", file=sys.stderr)
+        print(
+            f"Rotator for {config_file_or_interface_name} is already up",
+            file=sys.stderr,
+        )
         return 1
     else:
         if config_file_or_interface_name in state.interfaces:
@@ -35,7 +38,17 @@ def up(config_file_or_interface_name: str) -> int:
             ).config_file
         else:
             config_file = config_file_or_interface_name
-        if config_parser.read_config(config_file):
+        parsed_config = config_parser.read_config(config_file)
+        interface_name = parsed_config.get("interface")
+        if parsed_config:
+            if (
+                interface_name in state.interfaces.keys()
+                and state.interfaces[interface_name].status
+                != storage.InterfaceStatus.DOWN
+            ):
+                print(f"Rotator for {interface_name} is already up", file=sys.stderr)
+                return 1
+
             import keyring
             from keyrings.alt.file import EncryptedKeyring
 
@@ -95,7 +108,7 @@ def down(interface_name: str) -> int:
         interface_name in state.interfaces
         and state.interfaces[interface_name].status == storage.InterfaceStatus.DOWN
     ):
-        print(f"{interface_name} is already down!")
+        print(f"Rotator for {interface_name} is already down!")
         return 0
     else:
         print(f"Invalid interface {interface_name}", file=sys.stderr)
@@ -187,13 +200,17 @@ def genauthkeys(private_file_path: str, public_file_path: str) -> int:
     """`genauthkeys` command handler.
 
     Args:
-        kem (str): KEM identifier
+        private_file_path (str): Path to the file where the private key will be stored.
+        public_file_path (str): Path to the file where the public key will be stored.
 
     Returns:
-        int: return code
+        int: return code (0 indicates success)
     """
-    key_gen.gen_id(private_file_path, public_file_path)
-    return 0
+    try:
+        key_gen.gen_id(private_file_path, public_file_path)
+        return 0
+    except:
+        return 1
 
 
 HANDLER = {

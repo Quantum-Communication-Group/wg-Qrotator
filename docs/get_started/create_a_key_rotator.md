@@ -10,7 +10,7 @@ parent: Get started
 
 Each key rotator is attached to one WireGuard network interface. Multiple rotators can be running at the same time. Since each WireGuard interface has one or more peers (i.e. the hosts on the other side of the tunnels), each key rotator can handle one or more tunnels through the same network interface. 
 
-It is impossible to just rely on the established shared for authentication since each rotator starts with no pre shared secret. So, each rotator must have an ML-DSA key pair. All messages sent from peer to peer before establishing the first shared key, use ML-DSA to authenticate the messages. This key pair can be generated using the [genauthkeys](/wg-Qrotator/cli/genauthkeys) command as follows:
+It is impossible to just rely on the established shared for authentication since each rotator starts with no pre shared secret. So, each rotator must have an ML-DSA key pair. All messages sent from peer to peer before establishing the first shared key, use ML-DSA to authenticate the messages. This key pair can be generated using the [genauthkeys](/wg-Qrotator/cli/genauthkeys.html) command as follows:
 ```bash
 wg-qrotator genauthkeys <private_file_path> <public_file_path>
 ```

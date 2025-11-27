@@ -15,6 +15,7 @@ peers:
       ip: <peer_rotator_ip>
       port: <peer_rotator_port>
       sae: <peer_sae>
+      public_auth_key: <peer_rotator_public_authentication_key_file>
       mode: [client | server]
       extra_handshakes:
       - <algorithm_id>:  
@@ -38,6 +39,10 @@ Port number where the peer's rotator is exposed.
 
 Peer's Secure Application Entity (SAE) identifier. This value is used for the rotator to identify the peer towards the KMS. 
 
+### `peers.<public_auth_key>` - `str`
+
+Path to the file containing the peer's rotator ML-DSA-87 public key used for authentication.
+
 ### `peers.<peer_wg_pub_key>.mode` - `str`
 
 Operation mode of the rotator when interacting with its peer. It accepts:
@@ -46,7 +51,7 @@ Operation mode of the rotator when interacting with its peer. It accepts:
 
 Note that, between two rotators, one must have the `client` role and the other the `server` role.
 
-### `peers.<peer_wg_pub_key>.extra_handshakes` - `[str]`
+### `peers.<peer_wg_pub_key>.extra_handshakes` - `[str]` - `optional` 
 
 List of PQ-KEs to be used.
 
