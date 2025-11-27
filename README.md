@@ -6,7 +6,7 @@
 
 Check the [documentation](https://quantum-communication-group.github.io/wg-Qrotator) for more in-depth information about the solution.
 
-## How to setup and run
+## How to set up and run
 > Before starting `wg-Qrotator`, the peers must be already connected through WireGuard.
 
 First, install the main dependencies:
@@ -16,6 +16,7 @@ sudo apt install python3 python3-pip libexplain-dev build-essential automake aut
 ```
 
 Then, from the root directory of the repository, install `wg-Qrotator`:
+
 ```bash
 pip install wg-Qrotator
 ```
@@ -26,6 +27,8 @@ Example of a configuration file:
 
 ```yaml
 interface: wg0  # WireGuard interface to manage
+port: 2345 # Port where the rotator will be exposed to its peers on the specified WireGuard's interface 
+secret_auth_key: priv_auth.key # Private key used for authentication 
 
 kms: 
   uri: "https://127.0.0.1:8443/api/v1/keys" # KMS URI
@@ -34,9 +37,6 @@ kms:
   secret_key: private/certs/sae_001.key     # SAE private key
   sae: sae_001                              # SAE ID
   interface: 14                             # KMS interface (4 for ETSI QKD 004, 14 for ETSI QKD 014)
-
-port: 2345 # Port where the rotator will be exposed to its peers on the specified WireGuard's interface 
-secret_auth_key: priv_auth.key # Private key used for authentication 
 
 # Information about the peers
 peers:
@@ -60,6 +60,12 @@ Note that each entity that participates must be registered in the KMS and the ce
 
 The `mode` tells the role for this rotator when interacting with a given peer. The *client* is the initiator, and the *server* will only act upon the *client*'s request. Note that the indicated `mode` is the one used by the entity that uses this configuration file, for the other peer it shall be the opposite. 
 
+To generate the authentication key for each rotator, use the `genauthkeys` command as in the following example:
+
+```bash
+wg-qrotator genauthkeys priv_auth.key pub_auth.key
+```
+
 Start the rotator on each peer by running:
 
 ```bash
@@ -72,10 +78,9 @@ A log file is stored in the default logs directory (e.g. `/var/log/` for Linux) 
 
 ## Key combination
 
-There is the possibility to add key exchanges, broadly considered as handshakes, and use their respective resulting keys in the key combination process. 
-The final pre-shared key will be the OTP of the key given by the KMS and all the other keys extracted from extra key exchanges. 
+There is the possibility to add key exchanges and use their respective resulting keys in the key combination process. The final pre-shared key will be the OTP of the key given by the KMS and all the other keys extracted from extra key exchanges. 
 
-To activate extra key exchanges just add the field `extra_handshakes` for a given peer and enumerate the name of the exchanges and the private and public keys to be used. For example:
+To activate extra key exchanges just add the field `extra_handshakes` for a given peer and enumerate the name of the exchanges to be used. For example:
 
 ```yaml
 ...
@@ -84,8 +89,6 @@ peers:
       ...
       extra_handshakes:
         - ML_KEM_512:
-            secret_key: private/mlkem_private_alice.key
-            public_key: private/mlkem_public_bob.key
         - ...
 ```
 
