@@ -21,7 +21,7 @@ kms:
 
 ### `kms.uri` - `str`
 
-Location of the KMS to retrieve keys. If the KMS exposes a the ETSI GS QKD 004 interface, just input the IP and port of the KMS (e.g. `192.168.1.200:3237`). If the ETSI GS QKD is being used, input the full URL of the `/keys` endpoint (e.g. `https://192.168.1.200/api/v1/keys`).
+Location of the KMS to retrieve keys. If the KMS exposes the ETSI GS QKD 004 interface, just input the IP and port of the KMS (e.g. `192.168.1.200:3237`). If the ETSI GS QKD is being used, input the full URL of the `/keys` endpoint (e.g. `https://192.168.1.200/api/v1/keys`).
 
 ### `kms.interface` - `int`
 

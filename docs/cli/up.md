@@ -22,7 +22,7 @@ Due to the secure storage of authentication cookies, to the user is always reque
 
 ### Options
 
-- `-h`, `--help` -  show help message
+- `-h`, `--help` - show help message
 
 ### Examples
 

@@ -72,7 +72,7 @@ One can look at the `KeyGenerator` as the producer of keys and the `KeyRotationS
 
 ## 2. Bootstrap
 
-To each rotator is assigned one role, `server` or `client`. Consequently, to each `KeyGenerator` managing one tunnel is assign a role. The `server` awaits for its client to send a initialization message containing information important parameters to the bootstrap of the rotator. If the `server` agrees with these parameters, it sends an acknowledgement. After this, they are ready to start establishing keys.
+To each rotator is assigned one role, `server` or `client`. Consequently, to each `KeyGenerator` managing one tunnel is assign a role. The `server` awaits for its client to send an initialization message containing information important parameters to the bootstrap of the rotator. If the `server` agrees with these parameters, it sends an acknowledgement. After this, they are ready to start establishing keys.
 
 ## 3. Key establishment
 
@@ -89,6 +89,8 @@ After detecting that the buffer is not full, the `client` retrieves a 32 byte ke
 
 ### Post-quantum key establishment
 
+Before performing the key exchange, both the `client` and `server` generate an ephemeral key-pair for the selected KEM and send the respective public key to the peer.  
+
 For each KEM, the `client` encapsulates a 32 byte random secret and sends it to the `server`. The `server` decapsulates the secret and also encapsulates a random secret of its own and sends to the `client`. After the `client` performing the decapsulation, both have two 32 byte values that are XORed, this way constituting the shared key for the given KEM.
 
 If more than one KEM is configured, this procedure is performed as many times as needed. The final key established using post-quantum cryptography is the result of the XOR of all keys established.
@@ -99,10 +101,10 @@ Since PQ-KEs are considered optional, this step is also optional.
 
 The final key that was generated is the result of the XOR of the QKD and post-quantum keys. To ensure its integrity, the `client` hashes the key using SHA-512 with a combination of the SAE IDs as the salt. The `client` sends the digest to the `server` that verifies it by performing the same hashing procedure. If the verification passes successfully, it answers with an acknowledgement.
 
-After a successful key establishment, the freshly generated key is pushed to the key buffer, and loops back to the starting condition of wether the key buffer is full or not.
+After a successful key establishment, the freshly generated key is pushed to the key buffer, and loops back to the starting condition of whether the key buffer is full or not.
 
 ## 4. Key rotation
 
 The `KeyRotationScheduler` is continuously checking if the key buffer was keys. If it was, it retrieves it, and starts monitoring the underlying WireGuard tunnel to check if it is safe to rotate the key or not. When the right time comes, it sets the key as the tunnel's PSK, and returns to the initial starting condition. 
 
-A key is only rotated within the first 30 seconds after the tunnel's handshake. Knowing that WireGuard only performs two consecutive handshakes at minimum every two minutes, this ensures that a PSK is only set when there's no chance of WireGuard triggering an handshake. 
+A key is only rotated within the first 30 seconds after the tunnel's handshake. Knowing that WireGuard only performs two consecutive handshakes at minimum every two minutes, this ensures that a PSK is only set when there's no chance of WireGuard triggering a handshake. 

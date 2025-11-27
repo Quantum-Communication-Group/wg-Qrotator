@@ -2,7 +2,7 @@
 title: clearcookie
 layout: default
 nav_enabled: true
-nav_order: 7
+nav_order: 5
 parent: CLI
 ---
 
@@ -21,11 +21,11 @@ Delete the stored cookie for a given peer. This can be used to solve messages be
 
 ### Options
 
-- `-h`, `--help` -  show help message
+- `-h`, `--help` - show help message
 
 ### Examples
 
-Clear the the cookie for the peer in the `wg0` interface with IP equal to 10.0.0.2:
+Clear the cookie for the peer in the `wg0` interface with IP equal to 10.0.0.2:
 ```bash
 wg-qrotator clearcookie wg0 10.0.0.2
 ```

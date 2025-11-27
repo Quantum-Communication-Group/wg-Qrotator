@@ -12,9 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class ETSI_014:
-    def __init__(
-        self, kms_uri: str, root_crt: str, my_sae: SAE, other_sae: SAE
-    ):
+    def __init__(self, kms_uri: str, root_crt: str, my_sae: SAE, other_sae: SAE):
         self.kms_uri = kms_uri
         self.root_crt = root_crt
         self.my_sae = my_sae
@@ -38,15 +36,12 @@ class ETSI_014:
         KMS_ADDR = self.kms_uri
 
         if not key_id:
-            url = (
-                f"{KMS_ADDR}/{self.other_sae.sae_id}/enc_keys?number=1&size=256"
-            )
+            url = f"{KMS_ADDR}/{self.other_sae.sae_id}/enc_keys?number=1&size=256"
         else:
             url = f"{KMS_ADDR}/{self.other_sae.sae_id}/dec_keys?key_ID={key_id}"
 
         try:
-            response = requests.get(url, cert=(
-                MY_CRT, MY_KEY), verify=ROOT_CRT)
+            response = requests.get(url, cert=(MY_CRT, MY_KEY), verify=ROOT_CRT)
             response.raise_for_status()
             json_response = response.json()
 
@@ -61,19 +56,21 @@ class ETSI_014:
         except requests.RequestException as e:
             logger.error(f"Error occurred during KMS HTTP request: {e}")
         except (KeyError, ValueError) as e:
-            logger.error(
-                f"Error occurred while parsing KMS JSON response: {e}")
+            logger.error(f"Error occurred while parsing KMS JSON response: {e}")
 
         return None, None
 
 
 class ETSI_004:
-    def __init__(self, kms_uri: str, root_crt: str, my_sae, other_sae, inverted=False, ksid=None) -> None:
-        self._api_so = os.path.join(os.path.dirname(
-            __file__), "kms_so", "libclient_api.so")
+    def __init__(
+        self, kms_uri: str, root_crt: str, my_sae, other_sae, inverted=False, ksid=None
+    ) -> None:
+        self._api_so = os.path.join(
+            os.path.dirname(__file__), "kms_so", "libclient_api.so"
+        )
         self.kms_uri = kms_uri
-        self.kms_ip = kms_uri.split(':')[0]
-        self.kms_port = int(kms_uri.split(':')[1])
+        self.kms_ip = kms_uri.split(":")[0]
+        self.kms_port = int(kms_uri.split(":")[1])
         self.root_crt = root_crt
         self.my_sae = my_sae
         self.other_sae = other_sae
@@ -85,25 +82,41 @@ class ETSI_004:
         self._open_connect()
 
     def _load_so(self):
+        """Load the shared object containing the interface for ETSI GS QKD 004
+        """
         self.client_api = ctypes.CDLL(self._api_so)
         # Define argument types and return types for the functions
         self.client_api.openConnect.argtypes = [
-            c_char_p, c_char_p, c_char_p, c_int, c_char_p, c_char_p, c_char_p, c_int]
+            c_char_p,
+            c_char_p,
+            c_char_p,
+            c_int,
+            c_char_p,
+            c_char_p,
+            c_char_p,
+            c_int,
+        ]
         self.client_api.openConnect.restype = c_char_p
 
         self.client_api.getKey.argtypes = [
-            c_char_p, c_char_p, c_char_p, c_int, c_char, c_int, c_char_p]
+            c_char_p,
+            c_char_p,
+            c_char_p,
+            c_int,
+            c_char,
+            c_int,
+            c_char_p,
+        ]
         self.client_api.getKey.restype = QKD_Get_Key_Response
 
-        self.client_api.close.argtypes = [
-            c_char_p, c_char_p, c_char_p, c_int, c_char_p]
+        self.client_api.close.argtypes = [c_char_p, c_char_p, c_char_p, c_int, c_char_p]
         self.client_api.close.restype = QKD_Close_Response
 
     def _open_connect(self):
         """OPEN_CONNECT request.
 
         Raises:
-            ValueError: Error opening key session. 
+            ValueError: Error opening key session.
         """
         if not self.inverted:
             response = self.client_api.openConnect(
@@ -114,7 +127,7 @@ class ETSI_004:
                 bytes(self.my_sae.sae_id, "utf-8"),
                 bytes(self.other_sae.sae_id, "utf-8"),
                 self.ksid,
-                32
+                32,
             )
         else:
             response = self.client_api.openConnect(
@@ -125,7 +138,7 @@ class ETSI_004:
                 bytes(self.other_sae.sae_id, "utf-8"),
                 bytes(self.my_sae.sae_id, "utf-8"),
                 self.ksid,
-                32
+                32,
             )
 
         if response is not None:
@@ -143,7 +156,7 @@ class ETSI_004:
             ValueError: Error retrieving key.
 
         Returns:
-            tuple: (key content, key index) 
+            tuple: (key content, key index)
         """
         if index is not None:
             self.key_index = index
@@ -157,21 +170,23 @@ class ETSI_004:
             self.kms_port,
             c_char(0),
             self.key_index,
-            self.ksid
+            self.ksid,
         )
 
         if response.status == 0:
             self.key_index += 1
             # Extract the key data
-            key_data = base64.b64encode(ctypes.string_at(
-                response.key_buffer.data, response.key_buffer.size)).decode("utf-8")
+            key_data = base64.b64encode(
+                ctypes.string_at(response.key_buffer.data, response.key_buffer.size)
+            ).decode("utf-8")
             return key_data, self.key_index - 1
         else:
             raise ValueError(
-                "Failed to get key with status code: {}".format(response.status))
+                "Failed to get key with status code: {}".format(response.status)
+            )
 
     def close(self) -> int:
-        """CLOSE request. 
+        """CLOSE request.
 
         Raises:
             ValueError: Error closing session.
@@ -184,11 +199,14 @@ class ETSI_004:
             bytes(self.my_sae.key, "utf-8"),
             bytes(self.kms_ip, "utf-8"),
             self.kms_port,
-            self.ksid
+            self.ksid,
         )
 
         if response.status != 0:
             raise ValueError(
-                "Failed to close connection with status code: {}".format(response.status))
+                "Failed to close connection with status code: {}".format(
+                    response.status
+                )
+            )
 
         return response.status

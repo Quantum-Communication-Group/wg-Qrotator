@@ -14,7 +14,6 @@ The following commands are available:
 - `down` - Stop a rotator
 - `rm` - Remove a rotator
 - `ls` - List rotators
-- `genprivkey` - Generate private key
-- `genpubkey` - Generate public key from private key
+- `genauthkeys` - Generate ML-DSA key-pair for authentication
 - `clearcookie` - Delete saved peer's cookie
 

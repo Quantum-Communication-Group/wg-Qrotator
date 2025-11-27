@@ -20,7 +20,7 @@ Stop an existing rotator by providing the interface's name.
 
 ### Options
 
-- `-h`, `--help` -  show help message
+- `-h`, `--help` - show help message
 
 ### Examples
 
