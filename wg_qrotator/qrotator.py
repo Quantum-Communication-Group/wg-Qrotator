@@ -176,7 +176,7 @@ def start(config_file_path_or_interface: str) -> None:
             debug=config.get("debug", False),
             shutdown_event=shutdown_event,
             communicator=communicator,
-            key_queue_max_size=constants.KEY_BUFFER_SIZE,
+            key_queue_max_size=peer_info.get("buffer_length", constants.KEY_BUFFER_SIZE),
         )
         rotator = Rotator(
             peer_info["mode"],

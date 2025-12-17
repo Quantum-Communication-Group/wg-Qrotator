@@ -17,6 +17,7 @@ peers:
       sae: <peer_sae>
       public_auth_key: <peer_rotator_public_authentication_key_file>
       mode: [client | server]
+      buffer_length: <buffer_length>
       extra_handshakes:
       - <algorithm_id>:  
           secret_key: <secret_key_file>
@@ -51,6 +52,12 @@ Operation mode of the rotator when interacting with its peer. It accepts:
 
 Note that, between two rotators, one must have the `client` role and the other the `server` role.
 
+### `buffer_length` - `int` - `optional`
+
+Length of the internal key buffer. Accept an integer between 1 and 32. Defaults to 3.
+
+If two peers have set two different values, the rotator will be shutdown.
+
 ### `peers.<peer_wg_pub_key>.extra_handshakes` - `[str]` - `optional` 
 
 List of PQ-KEs to be used.
@@ -61,3 +68,5 @@ Identifier of the KEM to be used in the extra key exchange. It accepts:
 - `ML_KEM_1024`
 
 The definition of `extra_handshakes` is optional.
+
+If two peers have set two different values, the rotator will be shutdown.

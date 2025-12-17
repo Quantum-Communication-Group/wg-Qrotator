@@ -1,4 +1,7 @@
-import yaml, ipaddress, os, subprocess
+import yaml
+import ipaddress
+import os
+import subprocess
 from schema import Schema, Optional
 
 import wg_qrotator.exceptions as e
@@ -47,7 +50,8 @@ def file_exists(path: str) -> bool:
     """
     path_ = path
     if not os.path.isabs(path):
-        path_ = os.path.join(os.path.dirname(os.path.abspath(CONFIG_PATH)), path)
+        path_ = os.path.join(os.path.dirname(
+            os.path.abspath(CONFIG_PATH)), path)
 
     return os.path.isfile(path_)
 
@@ -120,6 +124,18 @@ def is_valid_wg_peer(peer_pub_key: str) -> bool:
     return peer_pub_key in peers
 
 
+def is_valid_buffer_length(buffer_length: int) -> bool:
+    """Check if key buffer length is valid.
+
+    Args:
+        buffer_length (int): key buffer length
+
+    Returns:
+        bool: True if valid, False if not.
+    """
+    return isinstance(buffer_length, int) and 0 < buffer_length <= 32
+
+
 schema = Schema(
     {
         Optional("debug"): bool,
@@ -143,6 +159,7 @@ schema = Schema(
                     "port": is_port,
                     "sae": str,
                     "mode": is_mode,
+                    Optional("buffer_length"): is_valid_buffer_length,
                     Optional("extra_handshakes"): [kem_is_supported],
                 }
             }

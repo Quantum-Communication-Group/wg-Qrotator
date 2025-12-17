@@ -24,6 +24,7 @@ class Key_scheduler:
     ):
         self.wg_interface = wg_interface
         self.wg_peer_id = wg_peer_id
+        self.key_queue_max_size = key_queue_max_size
         self.key_buffer = Queue(maxsize=key_queue_max_size)
         self.debug = debug
         self.shutdown_event = shutdown_event

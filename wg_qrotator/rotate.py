@@ -220,6 +220,7 @@ class Rotator:
                             "msg_type": "Hello",
                             "start_at": start_time.strftime("%Y-%m-%d %H:%M:%S"),
                             "kems": self.extra_handshakes,
+                            "key_buffer_length": self.key_scheduler.key_queue_max_size,
                         },
                         self.other_sae.ip,
                         self.other_sae.port,
@@ -261,7 +262,14 @@ class Rotator:
                     f"PQ-KE KEMs selection does not match. Rotator cannot be started for {self.other_sae.id}"
                 )
                 self.abort()
-                sys.exit(-1)
+                sys.exit(-1) # not the ideal behavior
+
+            if msg.get("key_buffer_length", constants.KEY_BUFFER_SIZE) != self.key_scheduler.key_queue_max_size:
+                logger.error(
+                    f"Selected key buffer length does not match. Rotator cannot be started for {self.other_sae.id}"
+                )
+                self.abort()
+                sys.exit(-1) # not the ideal behavior
 
             # Ack hello msg
             self.__ack(msg["msg_id"])
