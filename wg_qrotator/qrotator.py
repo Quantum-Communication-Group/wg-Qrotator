@@ -22,6 +22,11 @@ kr = EncryptedKeyring()
 kr.keyring_key = os.environ.get("KEYRING_PASSWORD")
 keyring.set_keyring(kr)
 
+def finish() -> None:
+    state = storage.Wg_qrotator_state.load()
+    state.update_interface_status(WG_INTERFACE, storage.InterfaceStatus.DOWN)
+    communicator.stop_listening()
+    shutdown_event.set()
 
 def handle_sigterm(signum, frame) -> None:
     """Handle SIGTERM.
@@ -31,11 +36,7 @@ def handle_sigterm(signum, frame) -> None:
         frame (_type_): Currently ignored.
     """
     logger.info("Received termination signal, shutting down gracefully...")
-    state = storage.Wg_qrotator_state.load()
-    state.update_interface_status(WG_INTERFACE, storage.InterfaceStatus.DOWN)
-    communicator.stop_listening()
-    shutdown_event.set()
-
+    finish()
 
 signal.signal(signal.SIGTERM, handle_sigterm)
 
@@ -214,6 +215,7 @@ def start(config_file_path_or_interface: str) -> None:
     for thread in threads:
         thread.join()
 
+    finish()
 
 if __name__ == "__main__":
     start(sys.argv[1])
