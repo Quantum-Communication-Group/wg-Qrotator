@@ -1,6 +1,5 @@
 import tempfile
 import base64
-import sys
 import time
 import datetime
 import logging
@@ -220,6 +219,7 @@ class Rotator:
                             "msg_type": "Hello",
                             "start_at": start_time.strftime("%Y-%m-%d %H:%M:%S"),
                             "kems": self.extra_handshakes,
+                            "key_buffer_length": self.key_scheduler.key_queue_max_size,
                         },
                         self.other_sae.ip,
                         self.other_sae.port,
@@ -261,7 +261,14 @@ class Rotator:
                     f"PQ-KE KEMs selection does not match. Rotator cannot be started for {self.other_sae.id}"
                 )
                 self.abort()
-                sys.exit(-1)
+                raise e.Initial_workflow_exception(f"KEMs selection did not match for {self.other_sae.id}")
+
+            if msg.get("key_buffer_length", constants.KEY_BUFFER_SIZE) != self.key_scheduler.key_queue_max_size:
+                logger.error(
+                    f"Selected key buffer length does not match. Rotator cannot be started for {self.other_sae.id}"
+                )
+                self.abort()
+                raise e.Initial_workflow_exception(f"Key buffer length did not match for {self.other_sae.id}")
 
             # Ack hello msg
             self.__ack(msg["msg_id"])
@@ -453,7 +460,11 @@ class Rotator:
                         self.wg_interface, storage.InterfaceStatus.HOLDING
                     )
                     # Initial workflow: hello and synch
-                    self.initial_workflow()
+                    try:
+                        self.initial_workflow()
+                    except e.Initial_workflow_exception:
+                        logger.info(f"Rotator for {self.other_sae.id} has finished due to an error in the initial peer handshake")
+                        return                 
                     # Wait until start_at
                     if self.start_at:
                         time_difference = (

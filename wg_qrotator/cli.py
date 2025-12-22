@@ -38,6 +38,9 @@ def up(config_file_or_interface_name: str) -> int:
             ).config_file
         else:
             config_file = config_file_or_interface_name
+        if not os.path.exists(config_file):
+            print(f"Provided path to the configuration file does not exist: '{config_file}'")
+            return 1
         parsed_config = config_parser.read_config(config_file)
         interface_name = parsed_config.get("interface")
         if parsed_config:
